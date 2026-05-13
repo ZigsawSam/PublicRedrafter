@@ -1,66 +1,51 @@
-export default async function handler(req, res) {
-  try {
+module.exports = async (req, res) => {
+
     if (req.method !== 'POST') {
-      return res.status(405).json({
-        error: 'Method not allowed'
-      });
+        return res.status(405).json({
+            error: 'Method not allowed'
+        });
     }
 
-    console.log('API started');
+    try {
 
-    console.log(
-      'ENV CHECK:',
-      !!process.env.HUGGING_FACE_API_KEY
-    );
+        const prompt = req.body.prompt;
 
-    const prompt = req.body?.prompt;
+        if (!prompt) {
+            return res.status(400).json({
+                error: 'Prompt missing'
+            });
+        }
 
-    console.log('PROMPT:', prompt);
+        const response = await fetch(
+            'https://api-inference.huggingface.co/models/google/flan-t5-base',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization:
+                        `Bearer ${process.env.HUGGING_FACE_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs:
+                        `Rewrite professionally: ${prompt}`
+                })
+            }
+        );
 
-    if (!prompt) {
-      return res.status(400).json({
-        error: 'Prompt missing'
-      });
+        const data = await response.json();
+
+        return res.status(200).json({
+            result:
+                data?.[0]?.generated_text ||
+                JSON.stringify(data)
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            error: error.toString()
+        });
     }
-
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/google/flan-t5-base',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGING_FACE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          inputs: `Rewrite professionally: ${prompt}`
-        })
-      }
-    );
-
-    console.log('STATUS:', response.status);
-
-    const data = await response.json();
-
-    console.log('DATA:', data);
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: JSON.stringify(data)
-      });
-    }
-
-    return res.status(200).json({
-      result:
-        data?.[0]?.generated_text ||
-        JSON.stringify(data)
-    });
-
-  } catch (error) {
-    console.error('FULL ERROR:', error);
-
-    return res.status(500).json({
-      error: String(error),
-      stack: error?.stack
-    });
-  }
-}
+};
