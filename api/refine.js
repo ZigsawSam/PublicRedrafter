@@ -1,3 +1,5 @@
+import https from 'https';
+
 export default async function handler(req, res) {
 
     if (req.method !== 'POST') {
@@ -10,46 +12,69 @@ export default async function handler(req, res) {
 
         const { prompt } = req.body;
 
-        const response = await fetch(
-            'https://api-inference.huggingface.co/models/google/flan-t5-base',
-            {
-                method: 'POST',
-                headers: {
-                    Authorization:
-                        `Bearer ${process.env.HUGGING_FACE_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    inputs:
-                        `Rewrite professionally: ${prompt}`
-                })
+        const bodyData = JSON.stringify({
+            inputs: `Rewrite professionally: ${prompt}`
+        });
+
+        const options = {
+            hostname: 'api-inference.huggingface.co',
+            path: '/models/google/flan-t5-base',
+            method: 'POST',
+            headers: {
+                'Authorization':
+                    `Bearer ${process.env.HUGGING_FACE_API_KEY}`,
+                'Content-Type': 'application/json',
+                'Content-Length':
+                    Buffer.byteLength(bodyData)
             }
-        );
+        };
 
-        const rawText = await response.text();
+        const hfResponse = await new Promise((resolve, reject) => {
 
-        console.log(rawText);
+            const request = https.request(
+                options,
+                (response) => {
 
-        let data;
+                    let data = '';
+
+                    response.on('data', chunk => {
+                        data += chunk;
+                    });
+
+                    response.on('end', () => {
+                        resolve(data);
+                    });
+                }
+            );
+
+            request.on('error', reject);
+
+            request.write(bodyData);
+
+            request.end();
+        });
+
+        console.log(hfResponse);
+
+        let parsed;
 
         try {
-
-            data = JSON.parse(rawText);
-
+            parsed = JSON.parse(hfResponse);
         } catch {
-
             return res.status(500).json({
-                error: rawText
+                error: hfResponse
             });
         }
 
         return res.status(200).json({
             result:
-                data?.[0]?.generated_text ||
-                JSON.stringify(data)
+                parsed?.[0]?.generated_text ||
+                JSON.stringify(parsed)
         });
 
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
             error: error.toString()
