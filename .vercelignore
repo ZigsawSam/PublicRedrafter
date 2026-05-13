@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+README.md
+Docx/
+Excel Files/
+iLovePDF/
+Pdf Files/
+PowerShell/
+Screenshot album/
