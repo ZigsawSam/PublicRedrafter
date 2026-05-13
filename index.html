@@ -29,39 +29,43 @@
 </div>
 
 <script>
-    async function process() {
-        const input = document.getElementById('userInput').value;
-        const out = document.getElementById('output');
-        const btn = document.getElementById('mainBtn');
+    async function refinePrompt() {
+  const prompt = document.getElementById('prompt').value;
 
-        if(!input.trim()) return alert("Please enter a prompt.");
+  const output = document.getElementById('output');
 
-        btn.disabled = true;
-        out.innerText = "Connecting to ML Model...";
+  output.innerText = 'Processing...';
 
-        try {
-            // Call the secure backend endpoint
-            const response = await fetch("/api/refine", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ prompt: input })
-            });
+  try {
+    const response = await fetch('/api/refine', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt
+      })
+    });
 
-            const data = await response.json();
-            
-            if (!response.ok) {
-                out.innerText = data.error || "Error processing your request. Please try again.";
-            } else {
-                out.innerText = data.result;
-            }
-        } catch (err) {
-            out.innerText = "Error: Unable to connect to the server. Please check your connection and try again.";
-        } finally {
-            btn.disabled = false;
-        }
+    const text = await response.text();
+
+    console.log(text);
+
+    try {
+      const data = JSON.parse(text);
+
+      output.innerText =
+        data.result ||
+        data.error ||
+        'No response';
+    } catch {
+      output.innerText = text;
     }
+
+  } catch (error) {
+    output.innerText = error.toString();
+  }
+}
 </script>
 
 </body>
