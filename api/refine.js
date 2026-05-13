@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
 
     if (req.method !== 'POST') {
         return res.status(405).json({
@@ -8,13 +8,7 @@ module.exports = async (req, res) => {
 
     try {
 
-        const prompt = req.body.prompt;
-
-        if (!prompt) {
-            return res.status(400).json({
-                error: 'Prompt missing'
-            });
-        }
+        const { prompt } = req.body;
 
         const response = await fetch(
             'https://api-inference.huggingface.co/models/google/flan-t5-base',
@@ -32,7 +26,22 @@ module.exports = async (req, res) => {
             }
         );
 
-        const data = await response.json();
+        const rawText = await response.text();
+
+        console.log(rawText);
+
+        let data;
+
+        try {
+
+            data = JSON.parse(rawText);
+
+        } catch {
+
+            return res.status(500).json({
+                error: rawText
+            });
+        }
 
         return res.status(200).json({
             result:
@@ -42,10 +51,8 @@ module.exports = async (req, res) => {
 
     } catch (error) {
 
-        console.error(error);
-
         return res.status(500).json({
             error: error.toString()
         });
     }
-};
+}
