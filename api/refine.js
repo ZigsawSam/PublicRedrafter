@@ -8,7 +8,10 @@ export default async function handler(req, res) {
 
     console.log('API started');
 
-    console.log('ENV CHECK:', !!process.env.HUGGING_FACE_API_KEY);
+    console.log(
+      'ENV CHECK:',
+      !!process.env.HUGGING_FACE_API_KEY
+    );
 
     const prompt = req.body?.prompt;
 
@@ -21,7 +24,7 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(
-      'https://api-inference.huggingface.co/models/gpt2',
+      'https://api-inference.huggingface.co/models/google/flan-t5-base',
       {
         method: 'POST',
         headers: {
@@ -29,20 +32,28 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          inputs: prompt
+          inputs: `Rewrite professionally: ${prompt}`
         })
       }
     );
 
     console.log('STATUS:', response.status);
 
-    const text = await response.text();
+    const data = await response.json();
 
-console.log(text);
+    console.log('DATA:', data);
 
-return res.status(200).json({
-  result: text
-});
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: JSON.stringify(data)
+      });
+    }
+
+    return res.status(200).json({
+      result:
+        data?.[0]?.generated_text ||
+        JSON.stringify(data)
+    });
 
   } catch (error) {
     console.error('FULL ERROR:', error);
