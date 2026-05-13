@@ -36,13 +36,13 @@ export default async function handler(req, res) {
 
     console.log('STATUS:', response.status);
 
-    const data = await response.json();
+    const text = await response.text();
 
-    console.log('DATA:', data);
+console.log(text);
 
-    return res.status(200).json({
-      result: JSON.stringify(data, null, 2)
-    });
+return res.status(200).json({
+  result: text
+});
 
   } catch (error) {
     console.error('FULL ERROR:', error);
