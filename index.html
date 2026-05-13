@@ -29,42 +29,44 @@
 </div>
 
 <script>
-    async function refinePrompt() {
-  const prompt = document.getElementById('prompt').value;
+async function refinePrompt() {
+    const prompt =
+        document.getElementById('userInput').value;
 
-  const output = document.getElementById('output');
+    const output =
+        document.getElementById('output');
 
-  output.innerText = 'Processing...';
-
-  try {
-    const response = await fetch('/api/refine', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        prompt
-      })
-    });
-
-    const text = await response.text();
-
-    console.log(text);
+    output.innerText = 'Processing...';
 
     try {
-      const data = JSON.parse(text);
+        const response = await fetch('/api/refine', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt
+            })
+        });
 
-      output.innerText =
-        data.result ||
-        data.error ||
-        'No response';
-    } catch {
-      output.innerText = text;
+        const text = await response.text();
+
+        console.log(text);
+
+        try {
+            const data = JSON.parse(text);
+
+            output.innerText =
+                data.result ||
+                data.error ||
+                'No response';
+        } catch {
+            output.innerText = text;
+        }
+
+    } catch (error) {
+        output.innerText = error.toString();
     }
-
-  } catch (error) {
-    output.innerText = error.toString();
-  }
 }
 </script>
 
