@@ -1,9 +1,0 @@
-{
-  "name": "prompt-refine",
-  "version": "1.0.0",
-  "description": "A tool to refine prompts using Mistral-7B",
-  "private": true,
-  "scripts": {
-    "dev": "vercel dev"
-  }
-}
