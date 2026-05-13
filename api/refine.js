@@ -1,16 +1,16 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({
-      error: 'Method not allowed',
+      error: 'Method not allowed'
     });
   }
 
   try {
-    const { prompt } = req.body;
+    const prompt = req.body?.prompt;
 
     if (!prompt) {
       return res.status(400).json({
-        error: 'Prompt is required',
+        error: 'Prompt is required'
       });
     }
 
@@ -20,33 +20,25 @@ module.exports = async function handler(req, res) {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.HUGGING_FACE_API_KEY}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          inputs: `Rewrite professionally:\n${prompt}`,
-          parameters: {
-            max_new_tokens: 200,
-          },
-        }),
+          inputs: `Rewrite professionally:\n${prompt}`
+        })
       }
     );
 
     const data = await response.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error || 'HuggingFace API error',
-      });
-    }
-
     return res.status(200).json({
-      result: data?.[0]?.generated_text || 'No response generated',
+      result: data?.[0]?.generated_text || 'No response'
     });
+
   } catch (error) {
     console.error(error);
 
     return res.status(500).json({
-      error: 'Internal server error',
+      error: 'Internal server error'
     });
   }
-};
+}
