@@ -1,16 +1,18 @@
+const fetch = (...args) =>
+
 module.exports = async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
+  const { prompt } = req.body || {};
 
   if (!prompt || !prompt.trim()) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
   const HF_KEY = process.env.HUGGING_FACE_API_KEY;
+
   if (!HF_KEY) {
     return res.status(500).json({ error: 'API key not configured' });
   }
@@ -25,24 +27,44 @@ module.exports = async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `[INST] You are a Prompt Engineer. Rewrite this prompt to be professional, structured, and effective for an AI: "${prompt}" [/INST]`,
-          parameters: { max_new_tokens: 300 },
+          inputs: `[INST] You are a Prompt Engineer. Rewrite this prompt professionally and clearly: "${prompt}" [/INST]`,
+          parameters: {
+            max_new_tokens: 300,
+            temperature: 0.7
+          },
         }),
       }
     );
 
     const data = await response.json();
 
-    if (data.error) {
-      return res.status(503).json({ error: 'Model is booting up. Please wait 20 seconds and try again.' });
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data.error || 'Inference API request failed'
+      });
+    }
+
+    if (!Array.isArray(data) || !data[0]?.generated_text) {
+      return res.status(500).json({
+        error: 'Invalid response from model'
+      });
     }
 
     const rawText = data[0].generated_text;
-    const refinedPrompt = rawText.split('[/INST]').pop().trim();
 
-    return res.status(200).json({ result: refinedPrompt });
+    const refinedPrompt = rawText
+      .split('[/INST]')
+      .pop()
+      .trim();
+
+    return res.status(200).json({
+      result: refinedPrompt,
+    });
   } catch (err) {
-    console.error('Error:', err);
-    return res.status(500).json({ error: 'Error processing your request. Please try again.' });
+    console.error(err);
+
+    return res.status(500).json({
+      error: 'Server error while processing request'
+    });
   }
 };
